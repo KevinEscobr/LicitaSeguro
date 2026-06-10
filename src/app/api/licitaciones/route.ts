@@ -16,14 +16,9 @@ export async function GET(request: NextRequest) {
       estado: estado && estado !== 'Todos' ? undefined : 'activas'
     });
 
-    // Search by text (ID, Title, Description, or Organism)
     if (search) {
-      list = list.filter(
-        (t) =>
-          t.id.toLowerCase().includes(search) ||
-          t.titulo.toLowerCase().includes(search) ||
-          t.descripcion.toLowerCase().includes(search) ||
-          t.organismo.toLowerCase().includes(search)
+      list = list.filter((t) =>
+        [t.id, t.titulo, t.descripcion, t.organismo].some((f) => f.toLowerCase().includes(search))
       );
     }
 

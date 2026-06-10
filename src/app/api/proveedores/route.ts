@@ -4,15 +4,8 @@ import { cleanObjectData } from '@/lib/cleanData';
 function formatRut(rut: string): string {
   const clean = rut.replace(/[^0-9kK]/g, '').toUpperCase();
   if (clean.length < 2) return clean;
-  const dv = clean.slice(-1);
-  let body = clean.slice(0, -1);
-  let formattedBody = '';
-  while (body.length > 3) {
-    formattedBody = '.' + body.slice(-3) + formattedBody;
-    body = body.slice(0, -3);
-  }
-  formattedBody = body + formattedBody;
-  return `${formattedBody}-${dv}`;
+  const body = clean.slice(0, -1).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${body}-${clean.slice(-1)}`;
 }
 
 export async function GET(request: NextRequest) {
@@ -37,17 +30,10 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
-      console.warn(`Mercado Publico BuscarProveedor API returned status: ${response.status}`);
       if (response.status === 500) {
-        try {
-          const bodyText = await response.text();
-          console.warn(`Error response body: ${bodyText}`);
-          const errData = JSON.parse(bodyText);
-          if (errData.Codigo === 10200 || (errData.Mensaje && errData.Mensaje.toLowerCase().includes('no hay resultados'))) {
-            return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 404 });
-          }
-        } catch (e) {
-          console.warn('Failed to parse error response body:', e);
+        const bodyText = await response.text().catch(() => '');
+        if (bodyText.includes('10200') || bodyText.toLowerCase().includes('no hay resultados')) {
+          return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 404 });
         }
       }
       return NextResponse.json({ error: 'Error al consultar API externa' }, { status: 502 });

@@ -1,5 +1,7 @@
 # LicitaSeguro — Inteligencia para Licitaciones Públicas
 
+📺 **[Ver demostración en YouTube](https://youtu.be/WO7EwhFp7YE)**
+
 **LicitaSeguro** es una moderna aplicación web SaaS construida con **Next.js (App Router)** que se conecta en tiempo real con la API oficial de **Mercado Público (ChileCompra)**. Permite a los usuarios consultar, filtrar y analizar convocatorias del Estado de Chile, además de verificar la acreditación comercial e historial licitatorio de proveedores mediante su RUT.
 
 El proyecto destaca por su interfaz de usuario premium basada en un sistema de diseño de **Glassmorphism (morfismo de vidrio)**, con fondos con auroras animadas, micro-interacciones suaves y un diseño responsivo adaptado para dispositivos móviles y escritorio.

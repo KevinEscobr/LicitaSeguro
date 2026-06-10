@@ -159,30 +159,13 @@ function formatDate(dateStr?: string | null): string {
  * @returns La cantidad extraída si fue exitoso, o la cantidad de la API como respaldo.
  */
 function parseCantidadFromDescripcion(descripcion: string | null | undefined, apiCantidad: number): number {
-  if (!descripcion) return apiCantidad;
-
-  // Normalmente solo sobrescribimos si la cantidad de la API es 1 o 0 (valores de relleno típicos)
-  if (apiCantidad !== 1 && apiCantidad !== 0) return apiCantidad;
-
-  const patterns = [
-    /(?:se estima en|estimado en|estimada en|estimado de|estimada de|aproximada de|aproximado de|aprox\.?|cantidad de|total de|aproximado:?|aproximada:?)\s+([\d]{1,3}(?:\.[\d]{3})+)(?:\s*(?:litros|lts|l|unidades|unid|kgs|kg|toneladas|ton|m3|m2|un|unidad|unidades|uds|ud|g|gr|gramos|cc))?/i,
-    /(?:se estima en|estimado en|estimada en|estimado de|estimada de|aproximada de|aproximado de|aprox\.?|cantidad de|total de|aproximado:?|aproximada:?)\s+([\d.]+)(?:\s*(?:litros|lts|l|unidades|unid|kgs|kg|toneladas|ton|m3|m2|un|unidad|unidades|uds|ud|g|gr|gramos|cc))/i,
-    /(?:se estima en|estimado en|estimada en)\s+([\d.]+)/i
-  ];
-
-  for (const pattern of patterns) {
-    const match = descripcion.match(pattern);
-    if (match && match[1]) {
-      let numStr = match[1];
-      // Tratar el punto como separador de miles y la coma como separador decimal
-      numStr = numStr.replace(/\./g, '').replace(/,/g, '.');
-      const parsed = parseFloat(numStr);
-      if (!isNaN(parsed) && parsed > 0) {
-        return parsed;
-      }
-    }
+  if (!descripcion || (apiCantidad !== 1 && apiCantidad !== 0)) return apiCantidad;
+  const match = descripcion.match(/(?:se estima en|estimado en|estimada en|aproximada de|cantidad de|total de|aprox\.?)\s+([\d.,]+)/i);
+  if (match?.[1]) {
+    const numStr = match[1].replace(/\./g, '').replace(/,/g, '.');
+    const parsed = parseFloat(numStr);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
   }
-
   return apiCantidad;
 }
 
@@ -210,30 +193,15 @@ function mapApiLicitacion(apiLic: ApiLicitacion): Tender {
 
   // 2. Extracción de detalles de adjudicación (si la licitación ya se cerró y adjudicó)
   // Busca el ganador en la lista de items.
-  let proveedorAdjudicadoRUT: string | undefined;
-  let proveedorAdjudicadoNombre: string | undefined;
-  let montoAdjudicado: number | undefined;
-
-  const firstAwardedItem = apiItems.find(item => item.Adjudicacion && item.Adjudicacion.RutProveedor);
-  if (firstAwardedItem && firstAwardedItem.Adjudicacion) {
-    proveedorAdjudicadoRUT = firstAwardedItem.Adjudicacion.RutProveedor;
-    proveedorAdjudicadoNombre = firstAwardedItem.Adjudicacion.NombreProveedor;
-
-    // Suma todos los montos de adjudicación unitarios disponibles
-    montoAdjudicado = apiItems.reduce((acc, curr) => {
-      if (curr.Adjudicacion) {
-        const price = curr.Adjudicacion.MontoUnitario ?? curr.Adjudicacion.PrecioUnitario ?? 0;
-        const qty = curr.Adjudicacion.Cantidad ?? curr.Cantidad ?? 1;
-        return acc + (price * qty);
-      }
-      return acc;
-    }, 0);
-
-    if (montoAdjudicado === 0 && apiLic.MontoEstimado) {
-      // Valor por defecto sensato (95%) si el monto no está especificado a nivel de items
-      montoAdjudicado = apiLic.MontoEstimado * 0.95; 
-    }
-  }
+  const firstAwardedItem = apiItems.find(item => item.Adjudicacion?.RutProveedor);
+  const proveedorAdjudicadoRUT = firstAwardedItem?.Adjudicacion?.RutProveedor;
+  const proveedorAdjudicadoNombre = firstAwardedItem?.Adjudicacion?.NombreProveedor;
+  const montoAdjudicado = firstAwardedItem ? apiItems.reduce((acc, curr) => {
+    if (!curr.Adjudicacion) return acc;
+    const price = curr.Adjudicacion.MontoUnitario ?? curr.Adjudicacion.PrecioUnitario ?? 0;
+    const qty = curr.Adjudicacion.Cantidad ?? curr.Cantidad ?? 1;
+    return acc + (price * qty);
+  }, 0) || (apiLic.MontoEstimado ? apiLic.MontoEstimado * 0.95 : undefined) : undefined;
 
   // 3. Mapeo de la entidad compradora
   const comprador = {
@@ -247,22 +215,9 @@ function mapApiLicitacion(apiLic: ApiLicitacion): Tender {
     cargoUsuario: apiLic.Comprador?.CargoUsuario,
   };
 
-  // 4. Mapeo estructurado del cronograma de fechas
-  const timeline = {
-    fechaCreacion: apiLic.Fechas?.FechaCreacion ? formatDate(apiLic.Fechas.FechaCreacion) : undefined,
-    fechaPublicacion: apiLic.Fechas?.FechaPublicacion ? formatDate(apiLic.Fechas.FechaPublicacion) : undefined,
-    fechaCierre: apiLic.Fechas?.FechaCierre ? formatDate(apiLic.Fechas.FechaCierre) : undefined,
-    fechaInicio: apiLic.Fechas?.FechaInicio ? formatDate(apiLic.Fechas.FechaInicio) : undefined,
-    fechaFinal: apiLic.Fechas?.FechaFinal ? formatDate(apiLic.Fechas.FechaFinal) : undefined,
-    fechaPubRespuestas: apiLic.Fechas?.FechaPubRespuestas ? formatDate(apiLic.Fechas.FechaPubRespuestas) : undefined,
-    fechaActoAperturaTecnica: apiLic.Fechas?.FechaActoAperturaTecnica ? formatDate(apiLic.Fechas.FechaActoAperturaTecnica) : undefined,
-    fechaActoAperturaEconomica: apiLic.Fechas?.FechaActoAperturaEconomica ? formatDate(apiLic.Fechas.FechaActoAperturaEconomica) : undefined,
-    fechaAdjudicacion: apiLic.Fechas?.FechaAdjudicacion ? formatDate(apiLic.Fechas.FechaAdjudicacion) : undefined,
-    fechaEstimadaAdjudicacion: apiLic.Fechas?.FechaEstimadaAdjudicacion ? formatDate(apiLic.Fechas.FechaEstimadaAdjudicacion) : undefined,
-    fechaVisitaTerreno: apiLic.Fechas?.FechaVisitaTerreno ? formatDate(apiLic.Fechas.FechaVisitaTerreno) : undefined,
-    fechaEntregaAntecedentes: apiLic.Fechas?.FechaEntregaAntecedentes ? formatDate(apiLic.Fechas.FechaEntregaAntecedentes) : undefined,
-    fechaSoporteFisico: apiLic.Fechas?.FechaSoporteFisico ? formatDate(apiLic.Fechas.FechaSoporteFisico) : undefined,
-  };
+  const timeline = apiLic.Fechas ? Object.fromEntries(
+    Object.entries(apiLic.Fechas).map(([k, v]) => [k.charAt(0).toLowerCase() + k.slice(1), formatDate(v)])
+  ) : {};
 
   return {
     id,
