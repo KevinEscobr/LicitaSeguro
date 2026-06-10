@@ -34,7 +34,7 @@ El proyecto destaca por su interfaz de usuario premium basada en un sistema de d
 * **Framework**: [Next.js 16 (App Router)](https://nextjs.org/)
 * **Biblioteca UI**: [React 19](https://react.dev/)
 * **Lenguaje**: [TypeScript](https://www.typescriptlang.org/)
-* **Estilos**: Vanilla CSS con un sistema de diseño premium personalizado (Variables CSS, animaciones de órbita fluida y adaptabilidad móvil).
+* **Estilos**: **Bootstrap 5** para la estructura, grillas y utilidades, complementado con CSS personalizado para efectos y colores.
 * **Iconografía**: [Bootstrap Icons](https://icons.getbootstrap.com/)
 * **Tipografía**: Google Fonts (Inter).
 
@@ -139,7 +139,7 @@ LicitaSeguro expone rutas de API locales para procesar y limpiar la información
 
 ## Sistema de Diseño
 
-El diseño de **LicitaSeguro** está definido en [globals.css](file:///c:/Users/ngrok/Documents/02-%20Proyectos/LicitaSeguro/src/app/globals.css) y utiliza una paleta de colores pastel moderna y relajante:
+El diseño de **LicitaSeguro** combina la robustez del sistema de componentes y grillas de **Bootstrap** con toques personalizados definidos en [globals.css](file:///c:/Users/ngrok/Documents/02-%20Proyectos/LicitaSeguro/src/app/globals.css) para mantener una paleta de colores pastel moderna y relajante:
 * **Fondo Base**: `#f0f2f8` (Azul grisáceo claro)
 * **Acentos Violetas**: `#9582dc` (Usado en botones primarios y branding principal)
 * **Glows y Sombras**: Sombras translúcidas y desenfoques Gaussianos (`backdrop-filter: blur(16px)`) para lograr el efecto Glassmorphism.
